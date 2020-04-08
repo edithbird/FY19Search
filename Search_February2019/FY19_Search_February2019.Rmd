@@ -1,0 +1,224 @@
+---
+title: "FY2019 Search February 2019"
+author: "Office of Marketing and Brand Management"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = FALSE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(dplyr)
+library(salesforcer)
+library(knitr)
+library(RForcecom)
+```
+
+
+```{r cars}
+username <- "christine.iyer@maine.edu"
+password <- "1Edithandoliver"
+securityToken <- "iFhpXgaXnuP3L5PQr69Zw2yOy"
+instanceURL <- "https://login.salesforce.com/"
+apiVersion <- "44.0"
+
+#auth <- sf_auth(username = username, password = password, security_token = securityToken,
+  #login_url = getOption("https://login.salesforce.com/"))
+
+
+
+session <- sf_auth(username, password, securityToken, instanceURL, apiVersion)
+```
+
+```{r}
+#sf_auth()
+```
+
+```{r}
+
+username <- "christine.iyer@maine.edu"
+password <- "1EdithandoliveriFhpXgaXnuP3L5PQr69Zw2yOy"
+#securityToken <- ""
+instanceURL <- "https://na24.salesforce.com/"
+apiVersion <- "44.0"
+
+
+
+
+
+session <- rforcecom.login(username, password, instanceURL,apiVersion  ) 
+```
+
+
+
+
+
+
+
+
+
+
+```{r use this}
+my_soql <- sprintf("SELECT Id,
+                           CreatedDate,
+                           Email, 
+                           FirstName, 
+                           LastName,
+                           TargetX_SRMb__Status__c, TargetX_SRMb__Student_Type__c,
+                           TargetX_SRMb__Anticipated_Start_Term__c,
+                           TargetX_SRMb__Anticipated_Start_Term_Year__c, 
+                           App_Application_Date__c,  
+                           TargetX_SRMb__Gender__c,  
+                           TargetX_SRMb__Last_Data_Input_Source__c,                                                                Initial_Source_Date__c, 
+                           Initial_Referral_Source__c, 
+                           Recruiting_Category__c,
+                           Ref__c, 
+                           Primary_State_Code__c
+                           
+                    FROM Contact 
+                    WHERE DAY_ONLY(CreatedDate) > 2019-02-05 AND DAY_ONLY(CreatedDate) < 2019-02-07 AND TargetX_SRMb__Status__c != 'Lead' 
+                    AND Recruiting_Category__c != ' '")
+
+queried_records <- sf_query(my_soql)
+#kable(head(queried_records))
+# dim(queried_records)
+# queried_records
+# unique(queried_records$Ref__c)
+```
+ 
+__College Board Juniors: Anticipated Start Fall 2020__
+
+```{r}
+LeadsUploaded <- read.csv("file:///C:/Users/christine.iyer/Box/Salesforce/Winter 2019/Conversions Winter 2019/Funnel_2-8-19.csv", header = T, stringsAsFactors = F)
+
+# LeadsUploaded %>% group_by(Email) %>% summarise(n = n()) %>% filter(n>1)
+
+# Leads Purchased
+Geo <- c("In-State", "Out-of-State")
+Leads <- c(4091, 6640)
+leadsDF <- data.frame(Geo, Leads)
+# Leads Uploaded
+# head(LeadsUploaded)
+# dim(LeadsUploaded)
+# leadsDF
+
+
+
+trythis <- merge(LeadsUploaded, queried_records, by = "Email" )
+trythis <- trythis %>% mutate(DateCollected = Sys.Date())
+
+
+# Don't forget to change the date!
+
+write.csv(trythis, "file:///C:/Users/christine.iyer/Box/Salesforce/Winter 2019/Conversions Winter 2019/Conversion_04-06-20_DeDuped.csv")
+# trythis %>% 
+#   #filter(Student.Stage == "Lead") %>% 
+#   mutate(Name = paste0(Last.Name, ", ", First.Name)) %>% 
+#   group_by(Student.Stage,TargetX_SRMb__Status__c,  Email, Created.Date, Ref__c, Recruiting_Category__c,Recruiting.Category) %>% summarise(n = n())
+
+
+
+# trythis %>% 
+#   #filter(Student.Stage == "Lead") %>% 
+#   #mutate(Name = paste0(Last.Name, ", ", First.Name)) %>% 
+#   group_by(Student.Stage,TargetX_SRMb__Status__c,  Email, Created.Date, Ref__c, Recruiting_Category__c,Recruiting.Category) %>% summarise(n = n())
+```
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+
+trythis1 <- trythis %>% group_by(Primary_State_Code__c) %>% summarise(Inqs = n())
+```
+
+
+```{r}
+Inqs <- trythis1 %>% mutate(Geo = ifelse(Primary_State_Code__c == "ME", "In-State", "Out-Of-State")) %>% group_by(Geo) %>% summarise(Inqs = sum(Inqs))
+
+```
+
+```{r}
+Apps <- trythis %>% filter(TargetX_SRMb__Status__c == "Applicant") %>% group_by(Primary_State_Code__c) %>% summarise(Apps = n())
+```
+
+
+```{r}
+Apps <- Apps%>% mutate(Geo = ifelse(Primary_State_Code__c == "ME", "In-State", "Out-Of-State")) %>% group_by(Geo) %>% summarise(Apps = sum(Apps))
+
+```
+
+
+```{r}
+# LeadsUploaded %>% mutate(Recruiting.Category_Geo = ifelse(Recruiting.Category == "PJRIG", "In-State", "Out-of-State" )) %>% group_by(Recruiting.Category_Geo) %>% summarise(n = n())
+```
+
+
+As of April 3, 2020, the FY19 February lead name conversions are as follows: 
+
+```{r}
+new <- cbind.data.frame(leadsDF, Inqs, Apps)
+
+new <- new[, c(1,2,4,6)]
+kable(new %>% 
+        mutate() %>% 
+        group_by(Geo) %>% 
+        summarise(
+          Leads = sum(Leads), 
+          Inqs = sum(Inqs),
+          Apps = sum(Apps),
+          InquiryYield = paste0(round(sum(Inqs)/sum(Leads)*100,2), "%"),
+          AppYield = paste0(round(sum(Apps)/sum(Leads)*100,2), "%")
+                     ) %>% 
+        mutate(Leads = prettyNum(Leads, big.mark = ",")))
+
+```
+
+In February 2019, USM purchased ~10,000 lead names from the College Board, all Juniors with an anticipated start of September 2020. Confirmations and enrollments will be available in the next few months. 
+<br>
+
+__College Board Juniors: Anticipated Start Fall 2021__
+
+<br>
+
+In February 2020, USM purchased ~75,000 lead names, over half of which were College Board Juniors. An email search campaign began almost three weeks ago, and to date, 2 emails have been sent to these lead names. The inquiry and application conversions to date are shown below. These numbers will change daily as the campaign runs. 
+
+
+```{r}
+
+#__FY20 YTD Comparison__
+
+#Updated: `r Sys.Date()` after 2 Email sends
+
+FY20 <- read.csv("C:/Users/christine.iyer/Box/Search/FY19_Search/Search_February2019/FY20ConversionsCompare.csv", header = T, stringsAsFactors = F)
+
+kable(FY20) 
+      # %>% group_by(Geo) %>% 
+      #   summarise(
+      #     Leads = sum(as.numeric(gsub(",","", Leads))), 
+      #     Inqs = sum(Inquiries),
+      #     Apps = sum(Apps),
+      #     InquiryYield = paste0(round(sum(Inqs)/sum(Leads)*100,2), "%"),
+      #     AppYield = paste0(round(sum(Apps)/sum(Leads)*100,2), "%")
+      #                ) %>% 
+      #   mutate(Leads = prettyNum(Leads, big.mark = ","))
+      
+# 
+               
+```
+
